@@ -9,6 +9,6 @@ while cmnd!='stop':
 	f.close()
 	cmnd=raw_input("To stop recording enter 'stop' ;")
 f=open('stop_button.txt','w')
-time.sleep(3)
+time.sleep(2)
 f.write('stop')
 f.close()
