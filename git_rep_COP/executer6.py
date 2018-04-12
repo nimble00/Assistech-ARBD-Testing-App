@@ -66,7 +66,7 @@ def linker(file):
 def ex(line):
 
 #line is a str. ex parses the line to produce a list of keys(key_list)
-#line="asdgKeyboard event: K1+K2+K3"  		key_list=['uinput.KEY_K1','uinput.KEY_K2','No keyboard event received',..]	
+#line="asdgKeyboard event: K1+K2+K3"  		key_list=['k=uinput.KEY_K1','k=uinput.KEY_K2',...]	
 		key_list=[]			
 		j_1=line.split("Keyboard event received: ")
 		

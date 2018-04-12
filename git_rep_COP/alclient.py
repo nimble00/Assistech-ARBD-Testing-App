@@ -1,7 +1,7 @@
 '''NOTE:
 1.alserver and alclient ,stop_button.txt,stop_button.py,executer6,indnt_exeserver.py should be in the same directory in PC
 2.There must be something written in the last three lines after server fxn defn in alserver
-3.Stop_button.py waits for 2 seconds after recieving the stop command to actually send stop to alclient.py;this is necessary as the last few BRF Data lines in the log_file after the last keyboard event line is also required.
+3.
 4.If even after calling stop, functioning has not stopped then give a few more keystrokes.This might not be rquired in ARBD as log file still gets updated even afer last keyboard event line.
 5.IMP:The stop_button.py has to be run every time along with alclient.py or else it won't work prorperly as stop.txt in default condition has 'stop'.
 6.Every testcase is saved of the form testcase_name.py, which has the code from indnt_exeserver.py, the lists link and testcase, and also the line sassy(link) (check the format of testcase at ln114)
@@ -9,7 +9,7 @@
 8.If execution of whole file is completed, done.txt will have one line called 'done'.
 9.done.txt and testcase.py files are buffer in arbd
 10. make sure uinstall is installed in the ARBD
-
+11.assuming wut won't get any value other than r ,e or x; make sure of this in GUI linking
 '''
 import os
 import paramiko, getpass, re, time
@@ -75,13 +75,18 @@ def recordclient(s):
 	s.send('continue')
 	qwer=0
 	testcase=[]	#testcase contains the unparsed lines as srecieved	
-	link=[]		#link contains parsed lines of the logfile.
+	blink=[]		#blink contains parsed lines of the logfile. blink=BRF_BASED_link
+	'''blink= [ 'o',b0,[l01],[l02],...,b1,[l11],[l12],...,b2,....,bn,[ln1],[ln2],...,bn_1,........bfinal/[lfinal] ]
 	
-	link.append([0,"0000",'0:0:0'])
-	
+		where bn = string containg nth BRF data line,bn_1 = string containg (n+1)th BRF data line
+		and [lnm] = list of the form : [lnm]=[line,time,['k=uinput.KEY_K1','k=uinput.KEY_K2',...],timediff] .
+		line is a string containing Keyboard Event, time is a string, third element is a list of the given format,
+		timediff is an int and is the time difference (lnm_1 - lnm)
+		b0 might come or might not come based on whether during recording first line from logfile is brfdata or keyboard event	
 
+	'''
+	blink.append('o')
 	
-	li=0
 	while qwer==0:
 		
 		
@@ -94,47 +99,57 @@ def recordclient(s):
 		#this is necessary as the last few BRF data lines in the log_file after the last keyboard event line is also required.
 		line=s.recv(1024)
 		testcase.append(str(line))
-		if 'Keyboard event received' in line:
-			ji=ex(link[li][1])			#make sure ex,ex2 is imported
-			print_ln=str(ji) + ' : ' + str(ex2(link[li][1]))
-			print print_ln	
-			link[li].append(ji)  #imp:line and link[li][1] are not same, line = link[li+1][1]
-			
-			li=li+1
-			link.append([li,line,timeparse(line)])	
-		elif ('BRF data' in line):
-			link[li].append(line)
 		
+		if ('BRF data' in line):
+			blink.append(line)	
+                        
+			
+		elif ('Keyboard event received' in line):
+			ji=ex(line)
+			blink.append([line,timeparse(line),ji])
+			print_ln=str(ji) + ' : ' + str(ex2(line))
+			print print_ln
 		if u_input=='stop':
 			s.send('stop')	
-			f=s.recv(1024)		
+			f=s.recv(1024)	
+			print f	
 			qwer+=1
 		
 		else:
 			
 			s.send('continue')
-	
-	link[len(link)-1].append(ex(link[li][1])) #last line parsing
-	for i in range(0,len(link)):     #adding time difference
-		if i==0 or i==len(link)-1:
-			link[i].append(0)
-		else :
-			link[i].append(timedifference(link[i][2],link[i+1][2]))
 
-	print s.recv(1024)
+	for i in range(len(blink)-1): #adding timedifference
+		if str(type(blink[i]))=="<type 'list'>":
+			
+			k=i+1
+                        
+			while k<len(blink)-1:
+				if str(type(blink[k]))=="<type 'list'>":
+					break
+				else:
+					k+=1
+			print blink[i][1],blink[k][1],blink[k]
+			if str(type(blink[k]))=="<type 'list'>":	#to make sure that last line is a keyboard event list
+				blink[i].append(timedifference(blink[i][1],blink[k][1]))
+	if str(type(blink[len(blink)-1]))=="<type 'list'>": #adding timediff to last element
+			blink[len(blink)-1].append(0)
+	
+	
+	
 	print 'The test case recorded is:'
-	for i in testcase:
-		print i
-
-	with open('int_exeserver.py','r') as f:	
-    		lines = f.readlines()
-    		
-    		with open(testcase_name+'.py', "w") as f1:
-        		f1.writelines(lines)
-	
-			f1.write('link='+str(link)+'\n')
-			f1.write('testcase='+str(testcase)+'\n')
-			f1.write('sassy(link)'+'\n')    #to call the function sassy
+	for i in range(len(testcase)-1):
+				
+			print testcase[i]
+			
+			print blink[i+1]
+			print ' '
+	  		
+    	with open(testcase_name+'.txt', "w") as f1:
+        		
+			f1.write(str(blink)+'\n')
+			f1.write(str(testcase)+'\n')
+			   #to call the function sassy
 	
 	#no need to close files, with automatically closes
 	
@@ -352,10 +367,12 @@ s.connect((host,port))
 print 'Connection established,sockets created and connected.'
 
 wut=raw_input("Enter 'r' to record or 'e' to execute a recorded test case or 'x' to exit connection:")
+#assuming wut won't get any value other than r ,e or x; make sure of this in GUI linking
 while wut !='x':
 	s.send(wut)
 	recv_msg=s.recv(1024)
 	if wut == 'r':
+		print 'make sure stop_button.py is STARTED ON ' 
 		recordclient(s)
 	elif wut == "e":
 		tc=raw_input("Please enter the name of test case to be executed(without '.py' or '.txt') :")
@@ -366,6 +383,7 @@ while wut !='x':
 
 s.send(wut)
 s.close()	#closes the socket, keep this at the last, or at the end of the loop
+
 
 
 #----------------------------------------------------------------------------------------

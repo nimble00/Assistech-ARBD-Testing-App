@@ -5,23 +5,28 @@ import time
 import subprocess
 import socket
 from subprocess import Popen,call,PIPE
-
+#p2.stdout.readline not lines
+#make sure to remove all print lines in final
 def server(host,port):
 	s=socket.socket()
 	ip=''
 	s.bind((ip,port))
-	#print 'waiting....'
+	print 'waiting....'
 	s.listen(1)
 	c,addr=s.accept()
-	#print 'connected...'
-
+	print 'connected...'
+	
 	wut=c.recv(1024)
 	c.send('recieved wut')
 	while str(wut)!='x':
 		if str(wut)=='r':
 			recordserver(s,c)
+			print 'recording'
 		elif str(wut)=='e':
 			exeserver(s,c)
+			print 'executing'
+		wut=c.recv(1024)
+		c.send('recieved wut')
 	s.close()	#close the socket, keep this at the last, or at the end of the loop
 
 def follow(thefile):
@@ -49,7 +54,7 @@ def recordserver(s,c):
 		chi=p1.communicate() 
 		
 		llf=str(chi[0][:-1]) #llf=latest log file
-		#print chi[0][:-1]
+		
 		
 		cmd2='tail -0f /opt/arbd/logs/' + llf   
 		 
@@ -67,14 +72,15 @@ def recordserver(s,c):
     		for line in iter(lambda: p2.stdout.readline(),''):
 			if ('Keyboard event' in line) or ("BRF data" in line):			
 				msg=c.recv(1024)
-				
+				#print line
 				if msg=='continue':
 					#print line
 					
 					c.send(line)
 			
 				if msg=='stop':
-					os.killpg(os.getpgid(p2.pid), signal.SIGTERM) 	 #stops recording
+					p2.kill()	 #stops recording
+					print 'os'					
 					c.send('recording stopped')	
 					break
 		
@@ -121,7 +127,7 @@ def exeserver(s,c):
 		l=[]
 		lenl=0
 		
-    		for line in iter(lambda: p2.stdout.readline(),''):
+    		for line in iter(lambda: p2.stdout.readline(),''):		#p2.stdout.readline not lines
 			
 			if ('Keyboard event' in line) or ("BRF data" in line):			
 				msg=c.recv(1024)
@@ -149,5 +155,5 @@ def exeserver(s,c):
 		os.remove("done.txt")
 		os.remove(str(tc))
 host= "192.168.7.2"
-port=6555
+port=9533
 server(host,port)
