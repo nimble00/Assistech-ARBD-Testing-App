@@ -290,31 +290,31 @@ def exeserver(s,c):
 			#print "Keyboard event executed."
 			time.sleep(delta)
 		obrf=[]
-		sv=0
-					
-		
+		sv = 0
+		rov=''
 		#obrf will store all brf lines until all keyboard events has been executed. After all keyboard events has been executed it will store the brf lines that come within 500 ms.
 		for line in iter(lambda: pp2.stdout.readline(),''):
 			
 			if " [display-svc] [debug] BRF data :" in line:
 				obrf.append(line)
-				print 'brf line;'+line
+				print 'brf line: '+line
 				
 			elif "Keyboard event" in line and sv!=len(rlist):   #second condition because Keyboard event lines were coming even after sv == len(rlist)
 				sv+=1
 				print "keyboard line:" +line
 				print 'sv:'+str(sv)
 			
-			if sv == 'bits_more':
-					print "Recording a bit more"
-					print datetime.datetime.now().time(), nxt.time()
+			if rov == 'bits_more':
+					#print "Recording a bit more"
+					#print datetime.datetime.now().time(), nxt.time()
 					
 					if datetime.datetime.now().time() > nxt.time():
-						print datetime.datetime.now().time() > nxt.time()
+						#print datetime.datetime.now().time() > nxt.time()
 						break
+
 			elif sv == len(rlist):
 					print "All keyboard events recorded" 
-					sv='bits_more'
+					rov='bits_more'
 					current=datetime.datetime.now()
 					nxt=current+datetime.timedelta(0,0,0,500)
 					#datetime.timedelta([days[, seconds[, microseconds[, milliseconds[, minutes[, hours[, weeks]]]]]]]
@@ -326,5 +326,5 @@ def exeserver(s,c):
 		c.send(str(obrf))	#only 2 brf data lines are sent atmost
 				
 host= "192.168.7.2"
-port=9087
+port=4848
 server(host,port)

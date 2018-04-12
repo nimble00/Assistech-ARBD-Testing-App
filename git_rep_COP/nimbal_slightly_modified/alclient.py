@@ -136,9 +136,8 @@ def recordclient(s):
 	while ik >0:
 		if str(type(blink[ik]))=="<type 'list'>": #adding timediff to last element
 			blink[ik].append(0)
-			break		#new
-		else:
-			ik-=1		#new
+			ik-=1
+	
 	
 	print 'The test case recorded is:'
 	for i in range(len(testcase)-1):
